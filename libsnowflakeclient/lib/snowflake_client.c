@@ -276,11 +276,11 @@ SNOWFLAKE_STATUS STDCALL snowflake_connect(SNOWFLAKE *sf) {
         log_trace("Here is JSON response:\n%s", s_resp);
         data = cJSON_GetObjectItem(resp, "data");
         // Get token
-        if (!json_copy_string(&sf->token, data, "token")) {
+        if (json_copy_string(&sf->token, data, "token")) {
             log_error("No valid token found in response");
         }
         // Get master token
-        if (!json_copy_string(&sf->master_token, data, "masterToken")) {
+        if (json_copy_string(&sf->master_token, data, "masterToken")) {
             log_error("No valid master token found in response");
         }
     } else {
