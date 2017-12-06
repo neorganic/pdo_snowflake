@@ -181,19 +181,19 @@ SNOWFLAKE_COLUMN_DESC ** set_description(const cJSON *rowtype) {
         if(json_copy_string(&desc[i]->name, column, "name")) {
             desc[i]->name = NULL;
         }
-        if (!json_copy_int(&desc[i]->byte_size, column, "byteLength")) {
+        if (json_copy_int(&desc[i]->byte_size, column, "byteLength")) {
             desc[i]->byte_size = 0;
         }
-        if (!json_copy_int(&desc[i]->internal_size, column, "length")) {
+        if (json_copy_int(&desc[i]->internal_size, column, "length")) {
             desc[i]->internal_size = 0;
         }
-        if (!json_copy_int(&desc[i]->precision, column, "precision")) {
+        if (json_copy_int(&desc[i]->precision, column, "precision")) {
             desc[i]->precision = 0;
         }
-        if (!json_copy_int(&desc[i]->scale, column, "scale")) {
+        if (json_copy_int(&desc[i]->scale, column, "scale")) {
             desc[i]->scale = 0;
         }
-        if (!json_copy_bool(&desc[i]->null_ok, column, "nullable")) {
+        if (json_copy_bool(&desc[i]->null_ok, column, "nullable")) {
             desc[i]->null_ok = SF_BOOLEAN_FALSE;
         }
         // Get type

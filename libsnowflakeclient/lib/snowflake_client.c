@@ -622,10 +622,10 @@ SNOWFLAKE_STATUS STDCALL snowflake_execute(SNOWFLAKE_STMT *sfstmt) {
         s_resp = cJSON_Print(resp);
         log_trace("Here is JSON response:\n%s", s_resp);
         data = cJSON_GetObjectItem(resp, "data");
-        if (json_copy_string(&sfstmt->sfqid, data, "queryId")) {
+        if (json_copy_string_no_alloc(sfstmt->sfqid, data, "queryId", UUID4_LEN)) {
             log_debug("No valid sfqid found in response");
         }
-        if (json_copy_string(&sfstmt->sqlstate, data, "sqlState")) {
+        if (json_copy_string_no_alloc(sfstmt->sqlstate, data, "sqlState", SQLSTATE_LEN)) {
             log_debug("No valid sqlstate found in response");
         }
         json_copy_bool(&success, resp, "success");
@@ -649,7 +649,7 @@ SNOWFLAKE_STATUS STDCALL snowflake_execute(SNOWFLAKE_STMT *sfstmt) {
                 sfstmt->desc = set_description(rowtype);
             }
             // Set results array
-            if (!json_detach_array_from_object(&sfstmt->raw_results, data, "rowset")) {
+            if (json_detach_array_from_object(&sfstmt->raw_results, data, "rowset")) {
                 log_error("No valid rowset found in response");
             }
             if (!json_copy_int(&sfstmt->total_rowcount, data, "total")) {

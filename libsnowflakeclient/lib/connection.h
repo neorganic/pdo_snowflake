@@ -100,13 +100,13 @@ char * STDCALL encode_url(CURL *curl,
                           const char *url,
                           URL_KEY_VALUE* vars,
                           int num_args);
-sf_bool STDCALL json_copy_bool(sf_bool *dest, cJSON *data, const char *item);
-sf_bool STDCALL json_copy_int(int64 *dest, cJSON *data, const char *item);
+SNOWFLAKE_JSON_ERROR STDCALL json_copy_bool(sf_bool *dest, cJSON *data, const char *item);
+SNOWFLAKE_JSON_ERROR STDCALL json_copy_int(int64 *dest, cJSON *data, const char *item);
 
 SNOWFLAKE_JSON_ERROR STDCALL json_copy_string(char **dest, cJSON *data, const char *item);
 SNOWFLAKE_JSON_ERROR STDCALL json_copy_string_no_alloc(char dest[], cJSON *data, const char *item, size_t dest_size);
-sf_bool STDCALL json_detach_array_from_object(cJSON **dest, cJSON *data, const char *item);
-sf_bool STDCALL json_detach_array_from_array(cJSON **dest, cJSON *data, int index);
+SNOWFLAKE_JSON_ERROR STDCALL json_detach_array_from_object(cJSON **dest, cJSON *data, const char *item);
+SNOWFLAKE_JSON_ERROR STDCALL json_detach_array_from_array(cJSON **dest, cJSON *data, int index);
 size_t json_resp_cb(char *data, size_t size, size_t nmemb, RAW_JSON_BUFFER *raw_json);
 sf_bool STDCALL http_perform(SNOWFLAKE *sf, CURL *curl, SNOWFLAKE_REQUEST_TYPE request_type, char *url, struct curl_slist *header, char *body, cJSON **json);
 sf_bool STDCALL is_retryable_http_code(int32 code);
