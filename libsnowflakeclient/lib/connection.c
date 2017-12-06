@@ -187,6 +187,8 @@ sf_bool STDCALL curl_post_call(SNOWFLAKE *sf,
     sf_bool ret = SF_BOOLEAN_FALSE;
     sf_bool stop = SF_BOOLEAN_FALSE;
 
+    memset(query_code, '\0', QUERYCODE_LEN);
+
     do {
         if(!http_perform(sf, curl, POST_REQUEST_TYPE, url, header, body, json)) {
             //TODO add breaking error case
@@ -244,6 +246,8 @@ sf_bool STDCALL curl_get_call(SNOWFLAKE *sf, CURL *curl, char *url, struct curl_
     cJSON *data = NULL;
     sf_bool ret = SF_BOOLEAN_FALSE;
     sf_bool stop = SF_BOOLEAN_FALSE;
+
+    memset(query_code, '\0', QUERYCODE_LEN);
 
     do {
         if(!http_perform(sf, curl, GET_REQUEST_TYPE, url, header, NULL, json)) {
