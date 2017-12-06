@@ -192,14 +192,14 @@ sf_bool STDCALL curl_post_call(SNOWFLAKE *sf,
     memset(query_code, 0, QUERYCODE_LEN);
 
     do {
-        if(!http_perform(sf, curl, POST_REQUEST_TYPE, url, header, body, json) || !*json) {
+        if(!http_perform(sf, curl, POST_REQUEST_TYPE, url, header, body, json)) {
             // Error is set in the perform function
-            break;
+            // TODO add breaking error case
         }
-        if (!*json || !cJSON_IsNull(cJSON_GetObjectItem(*json, "code")) && !json_copy_string(&query_code, *json, "code")) {
+        if (!*json || !cJSON_IsNull(cJSON_GetObjectItem(*json, "code")) && !json_copy_string_no_alloc(query_code, *json, "code", QUERYCODE_LEN)) {
 //            JSON_ERROR_MSG(json_error, error_msg, "Query code");
 //            SET_SNOWFLAKE_ERROR(error, SF_ERROR_BAD_JSON, error_msg, "");
-            break;
+            // TODO add breaking error case
         }
 
         // No query code means things went well, just break and return
@@ -221,21 +221,21 @@ sf_bool STDCALL curl_post_call(SNOWFLAKE *sf,
                 stop = SF_BOOLEAN_TRUE;
 //                JSON_ERROR_MSG(json_error, error_msg, "Result URL");
 //                SET_SNOWFLAKE_ERROR(error, SF_ERROR_BAD_JSON, error_msg, "");
-                break;
+                // TODO add breaking error case
             }
 
             log_debug("ping pong starting...");
             if (!request(sf, json, result_url, NULL, 0, NULL, header, GET_REQUEST_TYPE)) {
                 // Error came from request up, just break
                 stop = SF_BOOLEAN_TRUE;
-                break;
+                // TODO add breaking error case
             }
 
-            if (!*json || !cJSON_IsNull(cJSON_GetObjectItem(*json, "code")) && !json_copy_string(&query_code, *json, "code")) {
+            if (!*json || !cJSON_IsNull(cJSON_GetObjectItem(*json, "code")) && !json_copy_string_no_alloc(query_code, *json, "code", QUERYCODE_LEN)) {
                 stop = SF_BOOLEAN_TRUE;
 //                JSON_ERROR_MSG(json_error, error_msg, "Query code");
 //                SET_SNOWFLAKE_ERROR(error, SF_ERROR_BAD_JSON, error_msg, "");
-                break;
+                // TODO add breaking error case
             }
         }
 
@@ -267,14 +267,13 @@ sf_bool STDCALL curl_get_call(SNOWFLAKE *sf,
     memset(query_code, 0, QUERYCODE_LEN);
 
     do {
-        if(!http_perform(sf, curl, GET_REQUEST_TYPE, url, header, NULL, json) || !*json) {
-            // Error is set in the perform function
-            break;
+        if(!http_perform(sf, curl, GET_REQUEST_TYPE, url, header, NULL, json)) {
+            // TODO add breaking error case
         }
-        if (!*json || !cJSON_IsNull(cJSON_GetObjectItem(*json, "code")) && !json_copy_string(&query_code, *json, "code")) {
+        if (!*json || !cJSON_IsNull(cJSON_GetObjectItem(*json, "code")) && !json_copy_string_no_alloc(query_code, *json, "code", QUERYCODE_LEN)) {
 //            JSON_ERROR_MSG(json_error, error_msg, "Query code");
 //            SET_SNOWFLAKE_ERROR(error, SF_ERROR_BAD_JSON, error_msg, "");
-            break;
+            // TODO add breaking error case
         }
 
         // No query code means things went well, just break and return
