@@ -75,15 +75,15 @@ struct data {
     char trace_ascii; /* 1 or 0 */
 };
 
-#define JSON_ERROR_MSG(e, em, t) \
-switch(e) \
-{ \
-    case SF_JSON_ERROR_ITEM_MISSING: (em) = #t " missing from JSON response"; break; \
-    case SF_JSON_ERROR_ITEM_WRONG_TYPE: (em) = #t " is wrong type (expected a string)"; break; \
-    case SF_JSON_ERROR_ITEM_NULL: (em) = #t " is null"; break; \
-    case SF_JSON_ERROR_OOM: (em) = #t " caused an out of memory error"; break; \
-    default: (em) = "Received unknown JSON error code trying to find " #t ; break; \
-}
+//#define JSON_ERROR_MSG(e, em, t) \
+//switch(e) \
+//{ \
+//    case SF_JSON_ERROR_ITEM_MISSING: (em) = #t " missing from JSON response"; break; \
+//    case SF_JSON_ERROR_ITEM_WRONG_TYPE: (em) = #t " is wrong type (expected a string)"; break; \
+//    case SF_JSON_ERROR_ITEM_NULL: (em) = #t " is null"; break; \
+//    case SF_JSON_ERROR_OOM: (em) = #t " caused an out of memory error"; break; \
+//    default: (em) = "Received unknown JSON error code trying to find " #t ; break; \
+//}
 
 /*
  * Debug functions from curl example. Should update at somepoint, and possibly remove from header since these are private functions
