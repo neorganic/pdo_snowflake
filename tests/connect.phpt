@@ -3,6 +3,7 @@ PDO_SNOWFLAKE:
 --FILE--
 <?php
     $host = getenv('SNOWFLAKE_TEST_HOST');
+    
     $port = getenv('SNOWFLAKE_TEST_PORT');
     $account = getenv('SNOWFLAKE_TEST_ACCOUNT');
     $user = getenv('SNOWFLAKE_TEST_USER');
