@@ -197,7 +197,7 @@ sf_bool STDCALL curl_post_call(SNOWFLAKE *sf,
         }
         if ((json_error = json_copy_string_no_alloc(query_code, *json, "code", QUERYCODE_LEN)) != SF_JSON_NO_ERROR &&
             json_error != SF_JSON_ERROR_ITEM_NULL) {
-            //TODO add breaking error case
+            SET_SNOWFLAKE_ERROR(error, SF_ERROR_BAD_JSON, "Could not find a valid query code", "");
         }
 
         // No query code means things went well, just break and return
