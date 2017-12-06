@@ -182,6 +182,7 @@ sf_bool STDCALL curl_post_call(SNOWFLAKE *sf,
                                char *body,
                                cJSON **json,
                                SNOWFLAKE_ERROR *error) {
+    const char *error_msg;
     SNOWFLAKE_JSON_ERROR json_error;
     char query_code[QUERYCODE_LEN];
     char *result_url = NULL;
@@ -198,7 +199,8 @@ sf_bool STDCALL curl_post_call(SNOWFLAKE *sf,
         }
         if ((json_error = json_copy_string_no_alloc(query_code, *json, "code", QUERYCODE_LEN)) != SF_JSON_NO_ERROR &&
             json_error != SF_JSON_ERROR_ITEM_NULL) {
-            SET_SNOWFLAKE_ERROR(error, SF_ERROR_BAD_JSON, "Couldn't find valid query code", "");
+            JSON_ERROR_MSG(json_error, error_msg, "Query code");
+            SET_SNOWFLAKE_ERROR(error, SF_ERROR_BAD_JSON, error_msg, "");
             break;
         }
 
