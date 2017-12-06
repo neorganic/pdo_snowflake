@@ -37,14 +37,6 @@ typedef enum sf_request_type {
             DELETE_REQUEST_TYPE,
 } SNOWFLAKE_REQUEST_TYPE;
 
-typedef enum sf_json_errors {
-    SF_JSON_NO_ERROR,
-    SF_JSON_ERROR_ITEM_MISSING,
-    SF_JSON_ERROR_ITEM_WRONG_TYPE,
-    SF_JSON_ERROR_ITEM_NULL,
-    SF_JSON_ERROR_OOM
-} SNOWFLAKE_JSON_ERROR;
-
 typedef struct sf_raw_json_buffer {
     char *buffer;
     size_t size;
@@ -75,16 +67,6 @@ struct data {
     char trace_ascii; /* 1 or 0 */
 };
 
-#define JSON_ERROR_MSG(e, em, t) \
-switch(e) \
-{ \
-    case SF_JSON_ERROR_ITEM_MISSING: (em) = #t " missing from JSON response"; break; \
-    case SF_JSON_ERROR_ITEM_WRONG_TYPE: (em) = #t " is wrong type (expected a string)"; break; \
-    case SF_JSON_ERROR_ITEM_NULL: (em) = #t " is null"; break; \
-    case SF_JSON_ERROR_OOM: (em) = #t " caused an out of memory error"; break; \
-    default: (em) = "Received unknown JSON error code trying to find " #t ; break; \
-}
-
 /*
  * Debug functions from curl example. Should update at somepoint, and possibly remove from header since these are private functions
  */
@@ -110,12 +92,12 @@ char * STDCALL encode_url(CURL *curl,
                           const char *url,
                           URL_KEY_VALUE* vars,
                           int num_args);
-SNOWFLAKE_JSON_ERROR STDCALL json_copy_bool(sf_bool *dest, cJSON *data, const char *item);
-SNOWFLAKE_JSON_ERROR STDCALL json_copy_int(int64 *dest, cJSON *data, const char *item);
-SNOWFLAKE_JSON_ERROR STDCALL json_copy_string(char **dest, cJSON *data, const char *item);
-SNOWFLAKE_JSON_ERROR STDCALL json_copy_string_no_alloc(char *dest, cJSON *data, const char *item, size_t dest_size);
-SNOWFLAKE_JSON_ERROR STDCALL json_detach_array_from_object(cJSON **dest, cJSON *data, const char *item);
-SNOWFLAKE_JSON_ERROR STDCALL json_detach_array_from_array(cJSON **dest, cJSON *data, int index);
+sf_bool STDCALL json_copy_bool(sf_bool *dest, cJSON *data, const char *item);
+sf_bool STDCALL json_copy_int(int64 *dest, cJSON *data, const char *item);
+
+sf_bool STDCALL json_copy_string(char **dest, cJSON *data, const char *item);
+sf_bool STDCALL json_detach_array_from_object(cJSON **dest, cJSON *data, const char *item);
+sf_bool STDCALL json_detach_array_from_array(cJSON **dest, cJSON *data, int index);
 size_t json_resp_cb(char *data, size_t size, size_t nmemb, RAW_JSON_BUFFER *raw_json);
 sf_bool STDCALL http_perform(SNOWFLAKE *sf, CURL *curl, SNOWFLAKE_REQUEST_TYPE request_type, char *url, struct curl_slist *header, char *body, cJSON **json);
 sf_bool STDCALL is_retryable_http_code(int32 code);
