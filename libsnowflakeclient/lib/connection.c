@@ -181,6 +181,7 @@ sf_bool STDCALL curl_post_call(SNOWFLAKE *sf,
                                struct curl_slist *header,
                                char *body,
                                cJSON **json) {
+    SNOWFLAKE_JSON_ERROR json_error;
     char query_code[QUERYCODE_LEN];
     char *result_url = NULL;
     cJSON *data = NULL;
@@ -190,10 +191,11 @@ sf_bool STDCALL curl_post_call(SNOWFLAKE *sf,
     memset(query_code, '\0', QUERYCODE_LEN);
 
     do {
-        if(!http_perform(sf, curl, POST_REQUEST_TYPE, url, header, body, json)) {
+        if(!http_perform(sf, curl, POST_REQUEST_TYPE, url, header, body, json) || !*json) {
             //TODO add breaking error case
         }
-        if (!*json || (!cJSON_IsNull(cJSON_GetObjectItem(*json, "code")) && !json_copy_string_no_alloc(query_code, *json, "code", QUERYCODE_LEN))) {
+        if ((json_error = json_copy_string_no_alloc(query_code, *json, "code", QUERYCODE_LEN)) != SF_JSON_NO_ERROR &&
+            json_error != SF_JSON_ERROR_ITEM_NULL) {
             //TODO add breaking error case
         }
 
@@ -222,7 +224,8 @@ sf_bool STDCALL curl_post_call(SNOWFLAKE *sf,
                 //TODO add breaking error case
             }
 
-            if (!cJSON_IsNull(cJSON_GetObjectItem(*json, "code")) && !json_copy_string_no_alloc(query_code, *json, "code", QUERYCODE_LEN)) {
+            if ((json_error = json_copy_string_no_alloc(query_code, *json, "code", QUERYCODE_LEN)) != SF_JSON_NO_ERROR &&
+                json_error != SF_JSON_ERROR_ITEM_NULL) {
                 stop = SF_BOOLEAN_TRUE;
                 //TODO add breaking error case
             }
@@ -241,6 +244,7 @@ sf_bool STDCALL curl_post_call(SNOWFLAKE *sf,
 }
 
 sf_bool STDCALL curl_get_call(SNOWFLAKE *sf, CURL *curl, char *url, struct curl_slist *header, cJSON **json) {
+    SNOWFLAKE_JSON_ERROR json_error;
     char query_code[QUERYCODE_LEN];
     char *result_url = NULL;
     cJSON *data = NULL;
@@ -250,11 +254,12 @@ sf_bool STDCALL curl_get_call(SNOWFLAKE *sf, CURL *curl, char *url, struct curl_
     memset(query_code, '\0', QUERYCODE_LEN);
 
     do {
-        if(!http_perform(sf, curl, GET_REQUEST_TYPE, url, header, NULL, json)) {
+        if(!http_perform(sf, curl, GET_REQUEST_TYPE, url, header, NULL, json) || !*json) {
             //TODO add breaking error case
         }
         // TODO add case for null query_code
-        if (!*json || !cJSON_IsNull(cJSON_GetObjectItem(*json, "code")) && !json_copy_string_no_alloc(query_code, *json, "code", QUERYCODE_LEN)) {
+        if ((json_error = json_copy_string_no_alloc(query_code, *json, "code", QUERYCODE_LEN)) != SF_JSON_NO_ERROR &&
+                json_error != SF_JSON_ERROR_ITEM_NULL) {
             //TODO add breaking error case
         }
 
@@ -361,20 +366,25 @@ sf_bool STDCALL json_copy_string(char **dest, cJSON *data, const char *item) {
     return SF_BOOLEAN_FALSE;
 }
 
-sf_bool STDCALL json_copy_string_no_alloc(char dest[], cJSON *data, const char *item, size_t dest_size) {
+SNOWFLAKE_JSON_ERROR STDCALL json_copy_string_no_alloc(char dest[], cJSON *data, const char *item, size_t dest_size) {
     size_t blob_size;
     cJSON *blob = cJSON_GetObjectItem(data, item);
-    if (cJSON_IsString(blob)) {
+    if (!blob) {
+        return SF_JSON_ERROR_ITEM_MISSING;
+    } else if (!cJSON_IsNull(blob)) {
+        return SF_JSON_ERROR_ITEM_NULL;
+    } else if (!cJSON_IsString(blob)) {
+        return SF_JSON_ERROR_ITEM_WRONG_TYPE;
+    } else {
         strncpy(dest, blob->valuestring, dest_size);
         // If string is not null terminated, then add the terminator yourself
         if (dest[dest_size - 1] != '\0') {
             dest[dest_size - 1] = '\0';
         }
         log_debug("Found item and value; %s: %s", item, *dest);
-        return SF_BOOLEAN_TRUE;
     }
 
-    return SF_BOOLEAN_FALSE;
+    return SF_JSON_NO_ERROR;
 }
 
 sf_bool STDCALL json_copy_bool(sf_bool *dest, cJSON *data, const char *item) {
