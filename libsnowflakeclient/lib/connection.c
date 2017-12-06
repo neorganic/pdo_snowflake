@@ -181,7 +181,7 @@ sf_bool STDCALL curl_post_call(SNOWFLAKE *sf,
                                struct curl_slist *header,
                                char *body,
                                cJSON **json) {
-    char *query_code = NULL;
+    char query_code[QUERYCODE_LEN];
     char *result_url = NULL;
     cJSON *data = NULL;
     sf_bool ret = SF_BOOLEAN_FALSE;
@@ -191,7 +191,7 @@ sf_bool STDCALL curl_post_call(SNOWFLAKE *sf,
         if(!http_perform(sf, curl, POST_REQUEST_TYPE, url, header, body, json)) {
             //TODO add breaking error case
         }
-        if (!*json || (!cJSON_IsNull(cJSON_GetObjectItem(*json, "code")) && !json_copy_string(&query_code, *json, "code"))) {
+        if (!*json || (!cJSON_IsNull(cJSON_GetObjectItem(*json, "code")) && !json_copy_string_no_alloc(query_code, *json, "code", QUERYCODE_LEN))) {
             //TODO add breaking error case
         }
 
@@ -208,7 +208,6 @@ sf_bool STDCALL curl_post_call(SNOWFLAKE *sf,
         while (query_code && (strcmp(query_code, QUERY_IN_PROGRESS_CODE) == 0 || strcmp(query_code, QUERY_IN_PROGRESS_ASYNC_CODE) == 0)) {
             // Remove old result URL and query code if this isn't our first rodeo
             SF_FREE(result_url);
-            SF_FREE(query_code);
             data = cJSON_GetObjectItem(*json, "data");
             if (!json_copy_string(&result_url, data, "getResultUrl")) {
                 stop = SF_BOOLEAN_TRUE;
@@ -221,7 +220,7 @@ sf_bool STDCALL curl_post_call(SNOWFLAKE *sf,
                 //TODO add breaking error case
             }
 
-            if (!cJSON_IsNull(cJSON_GetObjectItem(*json, "code")) && !json_copy_string(&query_code, *json, "code")) {
+            if (!cJSON_IsNull(cJSON_GetObjectItem(*json, "code")) && !json_copy_string_no_alloc(query_code, *json, "code", QUERYCODE_LEN)) {
                 stop = SF_BOOLEAN_TRUE;
                 //TODO add breaking error case
             }
@@ -234,14 +233,13 @@ sf_bool STDCALL curl_post_call(SNOWFLAKE *sf,
         ret = SF_BOOLEAN_TRUE;
     } while (0); // Dummy loop to break out of
 
-    SF_FREE(query_code);
     SF_FREE(result_url);
 
     return ret;
 }
 
 sf_bool STDCALL curl_get_call(SNOWFLAKE *sf, CURL *curl, char *url, struct curl_slist *header, cJSON **json) {
-    char *query_code = NULL;
+    char query_code[QUERYCODE_LEN];
     char *result_url = NULL;
     cJSON *data = NULL;
     sf_bool ret = SF_BOOLEAN_FALSE;
@@ -252,7 +250,7 @@ sf_bool STDCALL curl_get_call(SNOWFLAKE *sf, CURL *curl, char *url, struct curl_
             //TODO add breaking error case
         }
         // TODO add case for null query_code
-        if (!*json || !cJSON_IsNull(cJSON_GetObjectItem(*json, "code")) && !json_copy_string(&query_code, *json, "code")) {
+        if (!*json || !cJSON_IsNull(cJSON_GetObjectItem(*json, "code")) && !json_copy_string_no_alloc(query_code, *json, "code", QUERYCODE_LEN)) {
             //TODO add breaking error case
         }
 
@@ -269,7 +267,6 @@ sf_bool STDCALL curl_get_call(SNOWFLAKE *sf, CURL *curl, char *url, struct curl_
         ret = SF_BOOLEAN_TRUE;
     } while (0); // Dummy loop to break out of
 
-    SF_FREE(query_code);
     SF_FREE(result_url);
 
     return ret;
