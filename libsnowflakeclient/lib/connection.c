@@ -182,7 +182,6 @@ sf_bool STDCALL curl_post_call(SNOWFLAKE *sf,
                                char *body,
                                cJSON **json) {
     const char *error_msg;
-    SNOWFLAKE_JSON_ERROR json_error;
     char query_code[QUERYCODE_LEN];
     char *result_url = NULL;
     cJSON *data = NULL;
@@ -197,8 +196,7 @@ sf_bool STDCALL curl_post_call(SNOWFLAKE *sf,
             // Error is set in the perform function
             break;
         }
-        if ((json_error = json_copy_string_no_alloc(query_code, *json, "code", QUERYCODE_LEN)) != SF_JSON_NO_ERROR &&
-            json_error != SF_JSON_ERROR_ITEM_NULL) {
+        if (!*json || !cJSON_IsNull(cJSON_GetObjectItem(*json, "code")) && !json_copy_string(&query_code, *json, "code")) {
 //            JSON_ERROR_MSG(json_error, error_msg, "Query code");
 //            SET_SNOWFLAKE_ERROR(error, SF_ERROR_BAD_JSON, error_msg, "");
             break;
@@ -219,7 +217,7 @@ sf_bool STDCALL curl_post_call(SNOWFLAKE *sf,
             SF_FREE(result_url);
             memset(query_code, 0, QUERYCODE_LEN);
             data = cJSON_GetObjectItem(*json, "data");
-            if (json_copy_string(&result_url, data, "getResultUrl") != SF_JSON_NO_ERROR) {
+            if (!json_copy_string(&result_url, data, "getResultUrl")) {
                 stop = SF_BOOLEAN_TRUE;
 //                JSON_ERROR_MSG(json_error, error_msg, "Result URL");
 //                SET_SNOWFLAKE_ERROR(error, SF_ERROR_BAD_JSON, error_msg, "");
@@ -233,8 +231,7 @@ sf_bool STDCALL curl_post_call(SNOWFLAKE *sf,
                 break;
             }
 
-            if ((json_error = json_copy_string_no_alloc(query_code, *json, "code", QUERYCODE_LEN)) != SF_JSON_NO_ERROR &&
-                json_error != SF_JSON_ERROR_ITEM_NULL) {
+            if (!*json || !cJSON_IsNull(cJSON_GetObjectItem(*json, "code")) && !json_copy_string(&query_code, *json, "code")) {
                 stop = SF_BOOLEAN_TRUE;
 //                JSON_ERROR_MSG(json_error, error_msg, "Query code");
 //                SET_SNOWFLAKE_ERROR(error, SF_ERROR_BAD_JSON, error_msg, "");
@@ -259,7 +256,6 @@ sf_bool STDCALL curl_get_call(SNOWFLAKE *sf,
                               char *url,
                               struct curl_slist *header,
                               cJSON **json) {
-    SNOWFLAKE_JSON_ERROR json_error;
     const char *error_msg;
     char query_code[QUERYCODE_LEN];
     char *result_url = NULL;
@@ -275,8 +271,7 @@ sf_bool STDCALL curl_get_call(SNOWFLAKE *sf,
             // Error is set in the perform function
             break;
         }
-        if ((json_error = json_copy_string_no_alloc(query_code, *json, "code", QUERYCODE_LEN)) != SF_JSON_NO_ERROR &&
-            json_error != SF_JSON_ERROR_ITEM_NULL) {
+        if (!*json || !cJSON_IsNull(cJSON_GetObjectItem(*json, "code")) && !json_copy_string(&query_code, *json, "code")) {
 //            JSON_ERROR_MSG(json_error, error_msg, "Query code");
 //            SET_SNOWFLAKE_ERROR(error, SF_ERROR_BAD_JSON, error_msg, "");
             break;
@@ -370,37 +365,37 @@ cleanup:
     return encoded_url;
 }
 
-SNOWFLAKE_JSON_ERROR STDCALL json_copy_string(char **dest, cJSON *data, const char *item) {
+sf_bool STDCALL json_copy_string(char **dest, cJSON *data, const char *item) {
     size_t blob_size;
     cJSON *blob = cJSON_GetObjectItem(data, item);
     if (!blob) {
-        return SF_JSON_ERROR_ITEM_MISSING;
+        return SF_BOOLEAN_FALSE;
     } else if(cJSON_IsNull(blob)) {
-        return SF_JSON_ERROR_ITEM_NULL;
+        return SF_BOOLEAN_FALSE;
     } else if (!cJSON_IsString(blob)) {
-        return SF_JSON_ERROR_ITEM_WRONG_TYPE;
+        return SF_BOOLEAN_FALSE;
     } else {
         blob_size = strlen(blob->valuestring) + 1;
         SF_FREE(*dest);
         *dest = (char *) SF_CALLOC(1, blob_size);
         if (!*dest) {
-            return SF_JSON_ERROR_OOM;
+            return SF_BOOLEAN_FALSE;
         }
         strncpy(*dest, blob->valuestring, blob_size);
         log_debug("Found item and value; %s: %s", item, *dest);
     }
 
-    return SF_JSON_NO_ERROR;
+    return SF_BOOLEAN_TRUE;
 }
 
-SNOWFLAKE_JSON_ERROR STDCALL json_copy_string_no_alloc(char *dest, cJSON *data, const char *item, size_t dest_size) {
+sf_bool STDCALL json_copy_string_no_alloc(char *dest, cJSON *data, const char *item, size_t dest_size) {
     cJSON *blob = cJSON_GetObjectItem(data, item);
     if (!blob) {
-        return SF_JSON_ERROR_ITEM_MISSING;
+        return SF_BOOLEAN_FALSE;
     } else if(cJSON_IsNull(blob)) {
-        return SF_JSON_ERROR_ITEM_NULL;
+        return SF_BOOLEAN_FALSE;
     } else if (!cJSON_IsString(blob)) {
-        return SF_JSON_ERROR_ITEM_WRONG_TYPE;
+        return SF_BOOLEAN_FALSE;
     } else {
         strncpy(dest, blob->valuestring, dest_size);
         // If string is not null terminated, then add the terminator yourself
@@ -410,49 +405,49 @@ SNOWFLAKE_JSON_ERROR STDCALL json_copy_string_no_alloc(char *dest, cJSON *data, 
         log_debug("Found item and value; %s: %s", item, dest);
     }
 
-    return SF_JSON_NO_ERROR;
+    return SF_BOOLEAN_TRUE;
 }
 
-SNOWFLAKE_JSON_ERROR STDCALL json_copy_bool(sf_bool *dest, cJSON *data, const char *item) {
+sf_bool STDCALL json_copy_bool(sf_bool *dest, cJSON *data, const char *item) {
     cJSON *blob = cJSON_GetObjectItem(data, item);
     if (!blob) {
-        return SF_JSON_ERROR_ITEM_MISSING;
+        return SF_BOOLEAN_FALSE;
     } else if(cJSON_IsNull(blob)) {
-        return SF_JSON_ERROR_ITEM_NULL;
+        return SF_BOOLEAN_FALSE;
     } else if (!cJSON_IsBool(blob)) {
-        return SF_JSON_ERROR_ITEM_WRONG_TYPE;
+        return SF_BOOLEAN_FALSE;
     } else {
         *dest = cJSON_IsTrue(blob) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
         log_debug("Found item and value; %s: %i", item, *dest);
     }
 
-    return SF_JSON_NO_ERROR;
+    return SF_BOOLEAN_TRUE;
 }
 
-SNOWFLAKE_JSON_ERROR STDCALL json_copy_int(int64 *dest, cJSON *data, const char *item) {
+sf_bool STDCALL json_copy_int(int64 *dest, cJSON *data, const char *item) {
     cJSON *blob = cJSON_GetObjectItem(data, item);
     if (!blob) {
-        return SF_JSON_ERROR_ITEM_MISSING;
+        return SF_BOOLEAN_FALSE;
     } else if(cJSON_IsNull(blob)) {
-        return SF_JSON_ERROR_ITEM_NULL;
+        return SF_BOOLEAN_FALSE;
     } else if (!cJSON_IsNumber(blob)) {
-        return SF_JSON_ERROR_ITEM_WRONG_TYPE;
+        return SF_BOOLEAN_FALSE;
     } else {
         *dest = (int64) blob->valuedouble;
         log_debug("Found item and value; %s: %i", item, *dest);
     }
 
-    return SF_JSON_NO_ERROR;
+    return SF_BOOLEAN_TRUE;
 }
 
-SNOWFLAKE_JSON_ERROR STDCALL json_detach_array_from_object(cJSON **dest, cJSON *data, const char *item) {
+sf_bool STDCALL json_detach_array_from_object(cJSON **dest, cJSON *data, const char *item) {
     cJSON *blob = cJSON_DetachItemFromObject(data, item);
     if (!blob) {
-        return SF_JSON_ERROR_ITEM_MISSING;
+        return SF_BOOLEAN_FALSE;
     } else if(cJSON_IsNull(blob)) {
-        return SF_JSON_ERROR_ITEM_NULL;
+        return SF_BOOLEAN_FALSE;
     } else if (!cJSON_IsArray(blob)) {
-        return SF_JSON_ERROR_ITEM_WRONG_TYPE;
+        return SF_BOOLEAN_FALSE;
     } else {
         if (*dest) {
             cJSON_Delete(*dest);
@@ -461,17 +456,17 @@ SNOWFLAKE_JSON_ERROR STDCALL json_detach_array_from_object(cJSON **dest, cJSON *
         log_debug("Found array item: %s", item);
     }
 
-    return SF_JSON_NO_ERROR;
+    return SF_BOOLEAN_TRUE;
 }
 
-SNOWFLAKE_JSON_ERROR STDCALL json_detach_array_from_array(cJSON **dest, cJSON *data, int index) {
+sf_bool STDCALL json_detach_array_from_array(cJSON **dest, cJSON *data, int index) {
     cJSON *blob = cJSON_DetachItemFromArray(data, index);
     if (!blob) {
-        return SF_JSON_ERROR_ITEM_MISSING;
+        return SF_BOOLEAN_FALSE;
     } else if(cJSON_IsNull(blob)) {
-        return SF_JSON_ERROR_ITEM_NULL;
+        return SF_BOOLEAN_FALSE;
     } else if (!cJSON_IsArray(blob)) {
-        return SF_JSON_ERROR_ITEM_WRONG_TYPE;
+        return SF_BOOLEAN_FALSE;
     } else {
         if (*dest) {
             cJSON_Delete(*dest);
@@ -480,7 +475,7 @@ SNOWFLAKE_JSON_ERROR STDCALL json_detach_array_from_array(cJSON **dest, cJSON *d
         log_debug("Found array item at index: %s", index);
     }
 
-    return SF_JSON_NO_ERROR;
+    return SF_BOOLEAN_TRUE;
 }
 
 /**
