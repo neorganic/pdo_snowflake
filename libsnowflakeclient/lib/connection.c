@@ -360,6 +360,22 @@ sf_bool json_copy_string(char **dest, cJSON *data, const char *item) {
     return SF_BOOLEAN_FALSE;
 }
 
+sf_bool json_copy_string_no_alloc(char dest[], cJSON *data, const char *item, size_t dest_size) {
+    size_t blob_size;
+    cJSON *blob = cJSON_GetObjectItem(data, item);
+    if (cJSON_IsString(blob)) {
+        strncpy(dest, blob->valuestring, dest_size);
+        // If string is not null terminated, then add the terminator yourself
+        if (dest[dest_size - 1] != '\0') {
+            dest[dest_size - 1] = '\0';
+        }
+        log_debug("Found item and value; %s: %s", item, *dest);
+        return SF_BOOLEAN_TRUE;
+    }
+
+    return SF_BOOLEAN_FALSE;
+}
+
 sf_bool json_copy_bool(sf_bool *dest, cJSON *data, const char *item) {
     cJSON *blob = cJSON_GetObjectItem(data, item);
     if (cJSON_IsBool(blob)) {
