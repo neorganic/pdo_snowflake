@@ -63,6 +63,14 @@ typedef struct sf_retry_context {
     DECORRELATE_JITTER_BACKOFF *djb;
 } RETRY_CONTEXT;
 
+struct url_param_flags {
+    sf_bool request_id;
+    sf_bool database;
+    sf_bool schema;
+    sf_bool warehouse;
+    sf_bool role;
+};
+
 struct data {
     char trace_ascii; /* 1 or 0 */
 };

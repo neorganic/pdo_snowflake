@@ -15,6 +15,7 @@ extern "C" {
 #define STDCALL __stdcall
 #endif
 
+#include <pthread.h>
 #include "cJSON.h"
 #include "arraylist.h"
 #include "basic_types.h"
@@ -161,6 +162,13 @@ typedef struct sf_snowflake_connection {
 
     // Error
     SNOWFLAKE_ERROR error;
+
+    // Token lock
+    pthread_rwlock_t token_lock;
+    // Sequence Counter lock
+    pthread_rwlock_t counter_lock;
+    // Connection attributes lock
+    pthread_rwlock_t attributes_lock;
 } SNOWFLAKE;
 
 /**

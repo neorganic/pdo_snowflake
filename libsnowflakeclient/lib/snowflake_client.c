@@ -219,6 +219,10 @@ SNOWFLAKE *STDCALL snowflake_init() {
     sf->network_timeout = 0;
     sf->sequence_counter = 0;
     uuid4_generate(sf->request_id);
+    // TODO check for lock init errors
+    pthread_rwlock_init(&sf->token_lock, NULL);
+    pthread_rwlock_init(&sf->counter_lock, NULL);
+    pthread_rwlock_init(&sf->attributes_lock, NULL);
 
     return sf;
 }
@@ -239,6 +243,9 @@ void STDCALL snowflake_term(SNOWFLAKE *sf) {
         SF_FREE(sf->passcode);
         SF_FREE(sf->master_token);
         SF_FREE(sf->token);
+        pthread_rwlock_destroy(&sf->token_lock);
+        pthread_rwlock_destroy(&sf->counter_lock);
+        pthread_rwlock_destroy(&sf->attributes_lock);
     }
     SF_FREE(sf);
 }
@@ -388,11 +395,16 @@ SNOWFLAKE_STATUS STDCALL snowflake_get_attr(
 }
 
 SNOWFLAKE_STMT *STDCALL snowflake_stmt(SNOWFLAKE *sf) {
+    int64 sequence_counter;
     // TODO: track memory usage
     SNOWFLAKE_STMT *sfstmt = (SNOWFLAKE_STMT *) SF_CALLOC(1, sizeof(SNOWFLAKE_STMT));
     sfstmt->connection = sf;
     sfstmt->sfqid = NULL;
     sfstmt->sqlstate = NULL;
+    // TODO set error if gaining lock is not successful
+    pthread_rwlock_wrlock(&sf->counter_lock);
+    sequence_counter = ++sf->sequence_counter;
+    pthread_rwlock_unlock(&sf->counter_lock);
     sfstmt->sequence_counter = ++sf->sequence_counter;
     uuid4_generate(sfstmt->request_id);
     //sfstmt->error = NULL;
