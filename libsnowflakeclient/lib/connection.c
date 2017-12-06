@@ -193,7 +193,7 @@ sf_bool STDCALL curl_post_call(SNOWFLAKE *sf,
 
     do {
         if(!http_perform(sf, curl, POST_REQUEST_TYPE, url, header, body, json, error) || !*json) {
-            //TODO add breaking error case
+            break;
         }
         if ((json_error = json_copy_string_no_alloc(query_code, *json, "code", QUERYCODE_LEN)) != SF_JSON_NO_ERROR &&
             json_error != SF_JSON_ERROR_ITEM_NULL) {
