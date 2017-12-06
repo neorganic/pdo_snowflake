@@ -665,6 +665,7 @@ sf_bool STDCALL request(SNOWFLAKE *sf,
     struct curl_slist *my_header = NULL;
     char *header_token = NULL;
     size_t header_token_size;
+    int bytes_written;
 
     curl = curl_easy_init();
     if (curl) {
@@ -676,13 +677,27 @@ sf_bool STDCALL request(SNOWFLAKE *sf,
             if (sf->token) {
                 header_token_size = strlen(HEADER_SNOWFLAKE_TOKEN_FORMAT) - 2 + strlen(sf->token) + 1;
                 header_token = (char *) SF_CALLOC(1, header_token_size);
-                snprintf(header_token, header_token_size, HEADER_SNOWFLAKE_TOKEN_FORMAT, sf->token);
+                if (!header_token) {
+                    SET_SNOWFLAKE_ERROR(error, SF_ERROR_OUT_OF_MEMORY,
+                                        "Ran out of memory trying to create header token", "");
+                    goto cleanup;
+                }
+                bytes_written = snprintf(header_token, header_token_size, HEADER_SNOWFLAKE_TOKEN_FORMAT, sf->token);
+                if (bytes_written < 0 || bytes_written >= header_token_size) {
+                    log_warn("Header token was not properly constructed. Expected size: %zu     Actual Size: %i",
+                             header_token_size, bytes_written);
+                    SF_FREE(header_token);
+                    SET_SNOWFLAKE_ERROR(error, SF_ERROR_STRING_FORMATTING,
+                                        "Not enough memory allocated for header token. "
+                                                "Formatted size was larger than expected", "");
+                    goto cleanup;
+                }
                 my_header = create_header_token(header_token);
             } else {
                 my_header = create_header_no_token();
             }
+            log_debug("Created header");
         }
-        log_debug("Created header");
 
         encoded_url = encode_url(curl, sf->protocol, sf->host, sf->port, url, url_params, num_url_params, error);
         if (encoded_url == NULL) {
@@ -695,7 +710,9 @@ sf_bool STDCALL request(SNOWFLAKE *sf,
         } else if (request_type == GET_REQUEST_TYPE) {
             ret = curl_get_call(sf, curl, encoded_url, my_header, json, error);
         } else {
-            // TODO add default case for bad type
+            SET_SNOWFLAKE_ERROR(error, SF_ERROR_BAD_REQUEST,
+                                "An unknown request type was passed to the request function", "");
+            goto cleanup;
         }
     }
 
