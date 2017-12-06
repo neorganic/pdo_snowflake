@@ -191,54 +191,53 @@ sf_bool STDCALL curl_post_call(SNOWFLAKE *sf,
 
     memset(query_code, '\0', QUERYCODE_LEN);
 
-    do {
-        if(!http_perform(sf, curl, POST_REQUEST_TYPE, url, header, body, json, error) || !*json) {
-            break;
+    if(!http_perform(sf, curl, POST_REQUEST_TYPE, url, header, body, json, error) || !*json) {
+        goto cleanup;
+    }
+    if ((json_error = json_copy_string_no_alloc(query_code, *json, "code", QUERYCODE_LEN)) != SF_JSON_NO_ERROR &&
+        json_error != SF_JSON_ERROR_ITEM_NULL) {
+        SET_SNOWFLAKE_ERROR(error, SF_ERROR_BAD_JSON, "Could not find a valid query code", "");
+    }
+
+    // No query code means things went well, just break and return
+    if (!query_code) {
+        ret = SF_BOOLEAN_TRUE;
+        goto cleanup;
+    }
+
+    if (strcmp(query_code, SESSION_EXPIRE_CODE) == 0) {
+        //TODO renew session
+    }
+
+    while (query_code && (strcmp(query_code, QUERY_IN_PROGRESS_CODE) == 0 || strcmp(query_code, QUERY_IN_PROGRESS_ASYNC_CODE) == 0)) {
+        // Remove old result URL and query code if this isn't our first rodeo
+        SF_FREE(result_url);
+        data = cJSON_GetObjectItem(*json, "data");
+        if (json_copy_string(&result_url, data, "getResultUrl")) {
+            stop = SF_BOOLEAN_TRUE;
+            //TODO add breaking error case
         }
+
+        log_debug("ping pong starting...");
+        if (!request(sf, json, result_url, NULL, 0, NULL, header, GET_REQUEST_TYPE, error)) {
+            stop = SF_BOOLEAN_TRUE;
+            //TODO add breaking error case
+        }
+
         if ((json_error = json_copy_string_no_alloc(query_code, *json, "code", QUERYCODE_LEN)) != SF_JSON_NO_ERROR &&
             json_error != SF_JSON_ERROR_ITEM_NULL) {
-            SET_SNOWFLAKE_ERROR(error, SF_ERROR_BAD_JSON, "Could not find a valid query code", "");
+            stop = SF_BOOLEAN_TRUE;
+            //TODO add breaking error case
         }
+    }
 
-        // No query code means things went well, just break and return
-        if (!query_code) {
-            ret = SF_BOOLEAN_TRUE;
-            break;
-        }
+    if (stop) {
+        goto cleanup;
+    }
 
-        if (strcmp(query_code, SESSION_EXPIRE_CODE) == 0) {
-            //TODO renew session
-        }
+    ret = SF_BOOLEAN_TRUE;
 
-        while (query_code && (strcmp(query_code, QUERY_IN_PROGRESS_CODE) == 0 || strcmp(query_code, QUERY_IN_PROGRESS_ASYNC_CODE) == 0)) {
-            // Remove old result URL and query code if this isn't our first rodeo
-            SF_FREE(result_url);
-            data = cJSON_GetObjectItem(*json, "data");
-            if (json_copy_string(&result_url, data, "getResultUrl")) {
-                stop = SF_BOOLEAN_TRUE;
-                //TODO add breaking error case
-            }
-
-            log_debug("ping pong starting...");
-            if (!request(sf, json, result_url, NULL, 0, NULL, header, GET_REQUEST_TYPE, error)) {
-                stop = SF_BOOLEAN_TRUE;
-                //TODO add breaking error case
-            }
-
-            if ((json_error = json_copy_string_no_alloc(query_code, *json, "code", QUERYCODE_LEN)) != SF_JSON_NO_ERROR &&
-                json_error != SF_JSON_ERROR_ITEM_NULL) {
-                stop = SF_BOOLEAN_TRUE;
-                //TODO add breaking error case
-            }
-        }
-
-        if (stop) {
-            break;
-        }
-
-        ret = SF_BOOLEAN_TRUE;
-    } while (0); // Dummy loop to break out of
-
+cleanup:
     SF_FREE(result_url);
 
     return ret;
