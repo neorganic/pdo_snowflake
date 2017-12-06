@@ -315,6 +315,7 @@ uint32 decorrelate_jitter_next_sleep(DECORRELATE_JITTER_BACKOFF *djb, uint32 sle
 
 char * encode_url(CURL *curl,
                   const char *protocol,
+                  const char *account,
                   const char *host,
                   const char *port,
                   const char *url,
@@ -322,15 +323,39 @@ char * encode_url(CURL *curl,
                   int num_args,
                   SNOWFLAKE_ERROR *error) {
     int i;
-    const char *format = "%s://%s:%s%s";
+    sf_bool host_empty = (host && strcmp(host, "") != 0) ? SF_BOOLEAN_FALSE : SF_BOOLEAN_TRUE;
+    sf_bool port_empty = (port && strcmp(port, "") != 0) ? SF_BOOLEAN_FALSE : SF_BOOLEAN_TRUE;
+    const char *format;
     char *encoded_url = NULL;
     // Size used for the url format
-    size_t base_url_size;
+    size_t base_url_size = 1;
     // Size used to determine buffer size
     size_t encoded_url_size;
     int bytes_written;
-    // Null terminator plus format contains 4 hardcoded characters
-    base_url_size = 5 + strlen(protocol) + strlen(host) + strlen(port) + strlen(url);
+    // Set proper format based on variables passed into encode URL.
+    // The format includes format specifiers that will be consumed by empty fields
+    // (i.e. if port is empty, add an extra specifier so that we have 1 call to snprintf, vs. 4 different calls).
+    // Format specifier order is protocol, then account, then host, then port, then url
+    if (!port_empty && !host_empty) {
+        format = "%s://%s%s:%s%s";
+        base_url_size += 4;
+        account = "";
+    } else if (port_empty && !host_empty) {
+        format = "%s://%s%s%s%s";
+        base_url_size += 3;
+        account = "";
+        port = "";
+    } else if (!port_empty && host_empty) {
+        format = "%s://%s.%s:%s%s";
+        base_url_size += 5;
+        host = DEFAULT_SNOWFLAKE_BASE_URL;
+    } else {
+        format = "%s://%s.%s%s%s";
+        base_url_size += 4;
+        host = DEFAULT_SNOWFLAKE_BASE_URL;
+        port = "";
+    }
+    base_url_size += strlen(protocol) + strlen(account) + strlen(host) + strlen(port) + strlen(url);
     encoded_url_size = base_url_size;
     // Encode URL parameters and set size info
     for (i = 0; i < num_args; i++) {
@@ -347,13 +372,19 @@ char * encode_url(CURL *curl,
     }
 
     encoded_url = (char *) SF_CALLOC(1, encoded_url_size);
-    bytes_written = snprintf(encoded_url, base_url_size, format, protocol, host, port, url);
+    if (!encoded_url) {
+        SET_SNOWFLAKE_ERROR(error, SF_ERROR_OUT_OF_MEMORY, "Ran out of memory trying to create encoded url", "");
+        goto cleanup;
+    }
+    bytes_written = snprintf(encoded_url, base_url_size, format, protocol, account, host, port, url);
 
     if (bytes_written < 0 || bytes_written >= encoded_url_size) {
         log_warn("Encoded url was not properly constructed. Expected size: %zu     Actual Size: %i",
                  encoded_url_size, bytes_written);
         SF_FREE(encoded_url);
-        encoded_url = NULL;
+        SET_SNOWFLAKE_ERROR(error, SF_ERROR_STRING_FORMATTING,
+                            "Not enough memory allocated for encoded url. "
+                                    "Formatted size was larger than expected", "");
         goto cleanup;
     }
 
@@ -380,7 +411,7 @@ SNOWFLAKE_JSON_ERROR STDCALL json_copy_string(char **dest, cJSON *data, const ch
     cJSON *blob = cJSON_GetObjectItem(data, item);
     if (!blob) {
         return SF_JSON_ERROR_ITEM_MISSING;
-    } else if (!cJSON_IsNull(blob)) {
+    } else if (cJSON_IsNull(blob)) {
         return SF_JSON_ERROR_ITEM_NULL;
     } else if (!cJSON_IsString(blob)) {
         return SF_JSON_ERROR_ITEM_WRONG_TYPE;
@@ -402,7 +433,7 @@ SNOWFLAKE_JSON_ERROR STDCALL json_copy_string_no_alloc(char dest[], cJSON *data,
     cJSON *blob = cJSON_GetObjectItem(data, item);
     if (!blob) {
         return SF_JSON_ERROR_ITEM_MISSING;
-    } else if (!cJSON_IsNull(blob)) {
+    } else if (cJSON_IsNull(blob)) {
         return SF_JSON_ERROR_ITEM_NULL;
     } else if (!cJSON_IsString(blob)) {
         return SF_JSON_ERROR_ITEM_WRONG_TYPE;
@@ -422,7 +453,7 @@ SNOWFLAKE_JSON_ERROR STDCALL json_copy_bool(sf_bool *dest, cJSON *data, const ch
     cJSON *blob = cJSON_GetObjectItem(data, item);
     if (!blob) {
         return SF_JSON_ERROR_ITEM_MISSING;
-    } else if (!cJSON_IsNull(blob)) {
+    } else if (cJSON_IsNull(blob)) {
         return SF_JSON_ERROR_ITEM_NULL;
     } else if (!cJSON_IsBool(blob)) {
         return SF_JSON_ERROR_ITEM_WRONG_TYPE;
@@ -438,7 +469,7 @@ SNOWFLAKE_JSON_ERROR STDCALL json_copy_int(int64 *dest, cJSON *data, const char 
     cJSON *blob = cJSON_GetObjectItem(data, item);
     if (!blob) {
         return SF_JSON_ERROR_ITEM_MISSING;
-    } else if (!cJSON_IsNull(blob)) {
+    } else if (cJSON_IsNull(blob)) {
         return SF_JSON_ERROR_ITEM_NULL;
     } else if (!cJSON_IsNumber(blob)) {
         return SF_JSON_ERROR_ITEM_WRONG_TYPE;
@@ -454,7 +485,7 @@ SNOWFLAKE_JSON_ERROR STDCALL json_detach_array_from_object(cJSON **dest, cJSON *
     cJSON *blob = cJSON_DetachItemFromObject(data, item);
     if (!blob) {
         return SF_JSON_ERROR_ITEM_MISSING;
-    } else if (!cJSON_IsNull(blob)) {
+    } else if (cJSON_IsNull(blob)) {
         return SF_JSON_ERROR_ITEM_NULL;
     } else if (!cJSON_IsArray(blob)) {
         return SF_JSON_ERROR_ITEM_WRONG_TYPE;
@@ -473,7 +504,7 @@ SNOWFLAKE_JSON_ERROR STDCALL json_detach_array_from_array(cJSON **dest, cJSON *d
     cJSON *blob = cJSON_DetachItemFromArray(data, index);
     if (!blob) {
         return SF_JSON_ERROR_ITEM_MISSING;
-    } else if (!cJSON_IsNull(blob)) {
+    } else if (cJSON_IsNull(blob)) {
         return SF_JSON_ERROR_ITEM_NULL;
     } else if (!cJSON_IsArray(blob)) {
         return SF_JSON_ERROR_ITEM_WRONG_TYPE;
@@ -715,7 +746,7 @@ sf_bool STDCALL request(SNOWFLAKE *sf,
             log_debug("Created header");
         }
 
-        encoded_url = encode_url(curl, sf->protocol, sf->host, sf->port, url, url_params, num_url_params, error);
+        encoded_url = encode_url(curl, sf->protocol, sf->account, sf->host, sf->port, url, url_params, num_url_params, error);
         if (encoded_url == NULL) {
             goto cleanup;
         }

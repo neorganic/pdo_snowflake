@@ -115,6 +115,7 @@ sf_bool STDCALL curl_get_call(SNOWFLAKE *sf,
 uint32 decorrelate_jitter_next_sleep(DECORRELATE_JITTER_BACKOFF *djb, uint32 sleep);
 char * STDCALL encode_url(CURL *curl,
                           const char *protocol,
+                          const char *account,
                           const char *host,
                           const char *port,
                           const char *url,
