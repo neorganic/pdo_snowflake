@@ -103,7 +103,7 @@ char * STDCALL encode_url(CURL *curl,
 sf_bool STDCALL json_copy_bool(sf_bool *dest, cJSON *data, const char *item);
 sf_bool STDCALL json_copy_int(int64 *dest, cJSON *data, const char *item);
 
-sf_bool STDCALL json_copy_string(char **dest, cJSON *data, const char *item);
+SNOWFLAKE_JSON_ERROR STDCALL json_copy_string(char **dest, cJSON *data, const char *item);
 SNOWFLAKE_JSON_ERROR STDCALL json_copy_string_no_alloc(char dest[], cJSON *data, const char *item, size_t dest_size);
 sf_bool STDCALL json_detach_array_from_object(cJSON **dest, cJSON *data, const char *item);
 sf_bool STDCALL json_detach_array_from_array(cJSON **dest, cJSON *data, int index);

@@ -213,7 +213,7 @@ sf_bool STDCALL curl_post_call(SNOWFLAKE *sf,
             // Remove old result URL and query code if this isn't our first rodeo
             SF_FREE(result_url);
             data = cJSON_GetObjectItem(*json, "data");
-            if (!json_copy_string(&result_url, data, "getResultUrl")) {
+            if (json_copy_string(&result_url, data, "getResultUrl")) {
                 stop = SF_BOOLEAN_TRUE;
                 //TODO add breaking error case
             }
@@ -351,23 +351,30 @@ cleanup:
     return encoded_url;
 }
 
-sf_bool STDCALL json_copy_string(char **dest, cJSON *data, const char *item) {
+SNOWFLAKE_JSON_ERROR STDCALL json_copy_string(char **dest, cJSON *data, const char *item) {
     size_t blob_size;
     cJSON *blob = cJSON_GetObjectItem(data, item);
-    if (cJSON_IsString(blob)) {
+    if (!blob) {
+        return SF_JSON_ERROR_ITEM_MISSING;
+    } else if (!cJSON_IsNull(blob)) {
+        return SF_JSON_ERROR_ITEM_NULL;
+    } else if (!cJSON_IsString(blob)) {
+        return SF_JSON_ERROR_ITEM_WRONG_TYPE;
+    } else {
         blob_size = strlen(blob->valuestring) + 1;
         SF_FREE(*dest);
         *dest = (char *) SF_CALLOC(1, blob_size);
+        if (!*dest) {
+            return SF_JSON_ERROR_OOM;
+        }
         strncpy(*dest, blob->valuestring, blob_size);
         log_debug("Found item and value; %s: %s", item, *dest);
-        return SF_BOOLEAN_TRUE;
     }
 
-    return SF_BOOLEAN_FALSE;
+    return SF_JSON_NO_ERROR;
 }
 
 SNOWFLAKE_JSON_ERROR STDCALL json_copy_string_no_alloc(char dest[], cJSON *data, const char *item, size_t dest_size) {
-    size_t blob_size;
     cJSON *blob = cJSON_GetObjectItem(data, item);
     if (!blob) {
         return SF_JSON_ERROR_ITEM_MISSING;

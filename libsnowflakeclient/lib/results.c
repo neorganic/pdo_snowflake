@@ -178,7 +178,7 @@ SNOWFLAKE_COLUMN_DESC ** set_description(const cJSON *rowtype) {
     for (i = 0; i < array_size; i++) {
         column = cJSON_GetArrayItem(rowtype, i);
         desc[i] = (SNOWFLAKE_COLUMN_DESC *) SF_CALLOC(1, sizeof(SNOWFLAKE_COLUMN_DESC));
-        if(!json_copy_string(&desc[i]->name, column, "name")) {
+        if(json_copy_string(&desc[i]->name, column, "name")) {
             desc[i]->name = NULL;
         }
         if (!json_copy_int(&desc[i]->byte_size, column, "byteLength")) {

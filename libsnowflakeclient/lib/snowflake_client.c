@@ -276,11 +276,11 @@ SNOWFLAKE_STATUS STDCALL snowflake_connect(SNOWFLAKE *sf) {
         log_trace("Here is JSON response:\n%s", s_resp);
         data = cJSON_GetObjectItem(resp, "data");
         // Get token
-        if (!json_copy_string(&sf->token, data, "token")) {
+        if (json_copy_string(&sf->token, data, "token")) {
             log_error("No valid token found in response");
         }
         // Get master token
-        if (!json_copy_string(&sf->master_token, data, "masterToken")) {
+        if (json_copy_string(&sf->master_token, data, "masterToken")) {
             log_error("No valid master token found in response");
         }
     } else {
@@ -622,25 +622,25 @@ SNOWFLAKE_STATUS STDCALL snowflake_execute(SNOWFLAKE_STMT *sfstmt) {
         s_resp = cJSON_Print(resp);
         log_trace("Here is JSON response:\n%s", s_resp);
         data = cJSON_GetObjectItem(resp, "data");
-        if (!json_copy_string(&sfstmt->sfqid, data, "queryId")) {
+        if (json_copy_string(&sfstmt->sfqid, data, "queryId")) {
             log_debug("No valid sfqid found in response");
         }
-        if (!json_copy_string(&sfstmt->sqlstate, data, "sqlState")) {
+        if (json_copy_string(&sfstmt->sqlstate, data, "sqlState")) {
             log_debug("No valid sqlstate found in response");
         }
         json_copy_bool(&success, resp, "success");
         if (success) {
             // Set Database info
-            if (!json_copy_string(&sfstmt->connection->database, data, "finalDatabaseName")) {
+            if (json_copy_string(&sfstmt->connection->database, data, "finalDatabaseName")) {
                 log_warn("No valid database found in response");
             }
-            if (!json_copy_string(&sfstmt->connection->schema, data, "finalSchemaName")) {
+            if (json_copy_string(&sfstmt->connection->schema, data, "finalSchemaName")) {
                 log_warn("No valid schema found in response");
             }
-            if (!json_copy_string(&sfstmt->connection->warehouse, data, "finalWarehouseName")) {
+            if (json_copy_string(&sfstmt->connection->warehouse, data, "finalWarehouseName")) {
                 log_warn("No valid warehouse found in response");
             }
-            if (!json_copy_string(&sfstmt->connection->role, data, "finalRoleName")) {
+            if (json_copy_string(&sfstmt->connection->role, data, "finalRoleName")) {
                 log_warn("No valid role found in response");
             }
             rowtype = cJSON_GetObjectItem(data, "rowtype");
