@@ -364,7 +364,7 @@ SNOWFLAKE_JSON_ERROR STDCALL json_copy_string(char **dest, cJSON *data, const ch
     cJSON *blob = cJSON_GetObjectItem(data, item);
     if (!blob) {
         return SF_JSON_ERROR_ITEM_MISSING;
-    } else if (!cJSON_IsNull(blob)) {
+    } else if (cJSON_IsNull(blob)) {
         return SF_JSON_ERROR_ITEM_NULL;
     } else if (!cJSON_IsString(blob)) {
         return SF_JSON_ERROR_ITEM_WRONG_TYPE;
@@ -386,7 +386,7 @@ SNOWFLAKE_JSON_ERROR STDCALL json_copy_string_no_alloc(char dest[], cJSON *data,
     cJSON *blob = cJSON_GetObjectItem(data, item);
     if (!blob) {
         return SF_JSON_ERROR_ITEM_MISSING;
-    } else if (!cJSON_IsNull(blob)) {
+    } else if (cJSON_IsNull(blob)) {
         return SF_JSON_ERROR_ITEM_NULL;
     } else if (!cJSON_IsString(blob)) {
         return SF_JSON_ERROR_ITEM_WRONG_TYPE;
@@ -406,7 +406,7 @@ SNOWFLAKE_JSON_ERROR STDCALL json_copy_bool(sf_bool *dest, cJSON *data, const ch
     cJSON *blob = cJSON_GetObjectItem(data, item);
     if (!blob) {
         return SF_JSON_ERROR_ITEM_MISSING;
-    } else if (!cJSON_IsNull(blob)) {
+    } else if (cJSON_IsNull(blob)) {
         return SF_JSON_ERROR_ITEM_NULL;
     } else if (!cJSON_IsBool(blob)) {
         return SF_JSON_ERROR_ITEM_WRONG_TYPE;
@@ -422,7 +422,7 @@ SNOWFLAKE_JSON_ERROR STDCALL json_copy_int(int64 *dest, cJSON *data, const char 
     cJSON *blob = cJSON_GetObjectItem(data, item);
     if (!blob) {
         return SF_JSON_ERROR_ITEM_MISSING;
-    } else if (!cJSON_IsNull(blob)) {
+    } else if (cJSON_IsNull(blob)) {
         return SF_JSON_ERROR_ITEM_NULL;
     } else if (!cJSON_IsNumber(blob)) {
         return SF_JSON_ERROR_ITEM_WRONG_TYPE;
@@ -438,7 +438,7 @@ SNOWFLAKE_JSON_ERROR STDCALL json_detach_array_from_object(cJSON **dest, cJSON *
     cJSON *blob = cJSON_DetachItemFromObject(data, item);
     if (!blob) {
         return SF_JSON_ERROR_ITEM_MISSING;
-    } else if (!cJSON_IsNull(blob)) {
+    } else if (cJSON_IsNull(blob)) {
         return SF_JSON_ERROR_ITEM_NULL;
     } else if (!cJSON_IsArray(blob)) {
         return SF_JSON_ERROR_ITEM_WRONG_TYPE;
@@ -457,7 +457,7 @@ SNOWFLAKE_JSON_ERROR STDCALL json_detach_array_from_array(cJSON **dest, cJSON *d
     cJSON *blob = cJSON_DetachItemFromArray(data, index);
     if (!blob) {
         return SF_JSON_ERROR_ITEM_MISSING;
-    } else if (!cJSON_IsNull(blob)) {
+    } else if (cJSON_IsNull(blob)) {
         return SF_JSON_ERROR_ITEM_NULL;
     } else if (!cJSON_IsArray(blob)) {
         return SF_JSON_ERROR_ITEM_WRONG_TYPE;
