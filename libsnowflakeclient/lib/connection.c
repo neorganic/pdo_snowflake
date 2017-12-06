@@ -8,8 +8,10 @@
 #include "snowflake_memory.h"
 #include "snowflake_client_int.h"
 #include "constants.h"
+#include "error.h"
 
 #define curl_easier_escape(curl, string) curl_easy_escape(curl, string, 0)
+#define QUERYCODE_LEN 7
 
 static
 void dump(const char *text,

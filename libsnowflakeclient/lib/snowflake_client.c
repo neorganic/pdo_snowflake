@@ -391,8 +391,8 @@ SNOWFLAKE_STMT *STDCALL snowflake_stmt(SNOWFLAKE *sf) {
     // TODO: track memory usage
     SNOWFLAKE_STMT *sfstmt = (SNOWFLAKE_STMT *) SF_CALLOC(1, sizeof(SNOWFLAKE_STMT));
     sfstmt->connection = sf;
-    sfstmt->sfqid = NULL;
-    sfstmt->sqlstate = NULL;
+    memset(sfstmt->sfqid, 0, UUID4_LEN);
+    memset(sfstmt->sqlstate, 0, SQLSTATE_LEN);
     sfstmt->sequence_counter = ++sf->sequence_counter;
     uuid4_generate(sfstmt->request_id);
     //sfstmt->error = NULL;
@@ -411,8 +411,6 @@ void STDCALL snowflake_stmt_close(SNOWFLAKE_STMT *sfstmt) {
     // TODO: track memory usage
     int64 i;
     if (sfstmt) {
-        SF_FREE(sfstmt->sfqid);
-        SF_FREE(sfstmt->sqlstate);
         cJSON_Delete(sfstmt->raw_results);
         cJSON_Delete(sfstmt->prepared_inputs);
         SF_FREE(sfstmt->sql_text);
