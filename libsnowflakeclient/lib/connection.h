@@ -81,7 +81,7 @@ switch(e) \
     case SF_JSON_ERROR_ITEM_MISSING: (em) = #t " missing from JSON response"; break; \
 case SF_JSON_ERROR_ITEM_WRONG_TYPE: (em) = #t " is wrong type (expected a string)"; break; \
 case SF_JSON_ERROR_ITEM_NULL: (em) = #t " is null"; break; \
-case SF_JSON_ERROR_OOM: (em) = #t " caused an out of memory error"; break; \
+case SF_JSON_ERROR_ITEM_OOM: (em) = #t " caused an out of memory error"; break; \
 default: (em) = "Received unknown JSON error code. Trying to find " #t ; break; \
 }
 
