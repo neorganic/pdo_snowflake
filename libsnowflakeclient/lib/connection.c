@@ -180,7 +180,8 @@ sf_bool STDCALL curl_post_call(SNOWFLAKE *sf,
                                char *url,
                                struct curl_slist *header,
                                char *body,
-                               cJSON **json) {
+                               cJSON **json,
+                               SNOWFLAKE_ERROR *error) {
     SNOWFLAKE_JSON_ERROR json_error;
     char query_code[QUERYCODE_LEN];
     char *result_url = NULL;
@@ -191,7 +192,7 @@ sf_bool STDCALL curl_post_call(SNOWFLAKE *sf,
     memset(query_code, '\0', QUERYCODE_LEN);
 
     do {
-        if(!http_perform(sf, curl, POST_REQUEST_TYPE, url, header, body, json) || !*json) {
+        if(!http_perform(sf, curl, POST_REQUEST_TYPE, url, header, body, json, error) || !*json) {
             //TODO add breaking error case
         }
         if ((json_error = json_copy_string_no_alloc(query_code, *json, "code", QUERYCODE_LEN)) != SF_JSON_NO_ERROR &&
@@ -219,7 +220,7 @@ sf_bool STDCALL curl_post_call(SNOWFLAKE *sf,
             }
 
             log_debug("ping pong starting...");
-            if (!request(sf, json, result_url, NULL, 0, NULL, header, GET_REQUEST_TYPE)) {
+            if (!request(sf, json, result_url, NULL, 0, NULL, header, GET_REQUEST_TYPE, error)) {
                 stop = SF_BOOLEAN_TRUE;
                 //TODO add breaking error case
             }
@@ -243,7 +244,7 @@ sf_bool STDCALL curl_post_call(SNOWFLAKE *sf,
     return ret;
 }
 
-sf_bool STDCALL curl_get_call(SNOWFLAKE *sf, CURL *curl, char *url, struct curl_slist *header, cJSON **json) {
+sf_bool STDCALL curl_get_call(SNOWFLAKE *sf, CURL *curl, char *url, struct curl_slist *header, cJSON **json, SNOWFLAKE_ERROR *error) {
     SNOWFLAKE_JSON_ERROR json_error;
     char query_code[QUERYCODE_LEN];
     char *result_url = NULL;
@@ -254,7 +255,7 @@ sf_bool STDCALL curl_get_call(SNOWFLAKE *sf, CURL *curl, char *url, struct curl_
     memset(query_code, '\0', QUERYCODE_LEN);
 
     do {
-        if(!http_perform(sf, curl, GET_REQUEST_TYPE, url, header, NULL, json) || !*json) {
+        if(!http_perform(sf, curl, GET_REQUEST_TYPE, url, header, NULL, json, error) || !*json) {
             //TODO add breaking error case
         }
         // TODO add case for null query_code
@@ -296,7 +297,14 @@ uint32 decorrelate_jitter_next_sleep(DECORRELATE_JITTER_BACKOFF *djb, uint32 sle
     return uimin(djb->cap, uimax(djb->base, (uint32) (rand() % (sleep * 3))));
 }
 
-char * encode_url(CURL *curl, const char *protocol, const char *host, const char *port, const char *url, URL_KEY_VALUE* vars, int num_args) {
+char * encode_url(CURL *curl,
+                  const char *protocol,
+                  const char *host,
+                  const char *port,
+                  const char *url,
+                  URL_KEY_VALUE* vars,
+                  int num_args,
+                  SNOWFLAKE_ERROR *error) {
     int i;
     const char *format = "%s://%s:%s%s";
     char *encoded_url = NULL;
@@ -485,7 +493,8 @@ sf_bool STDCALL http_perform(SNOWFLAKE *sf,
                              char *url,
                              struct curl_slist *header,
                              char *body,
-                             cJSON **json) {
+                             cJSON **json,
+                             SNOWFLAKE_ERROR *error) {
     CURLcode res;
     sf_bool ret = SF_BOOLEAN_FALSE;
     sf_bool retry = SF_BOOLEAN_FALSE;
@@ -648,7 +657,8 @@ sf_bool STDCALL request(SNOWFLAKE *sf,
                         int num_url_params,
                         char *body,
                         struct curl_slist *header,
-                        SNOWFLAKE_REQUEST_TYPE request_type) {
+                        SNOWFLAKE_REQUEST_TYPE request_type,
+                        SNOWFLAKE_ERROR *error) {
     sf_bool ret = SF_BOOLEAN_FALSE;
     CURL *curl = NULL;
     char *encoded_url = NULL;
@@ -674,16 +684,16 @@ sf_bool STDCALL request(SNOWFLAKE *sf,
         }
         log_debug("Created header");
 
-        encoded_url = encode_url(curl, sf->protocol, sf->host, sf->port, url, url_params, num_url_params);
+        encoded_url = encode_url(curl, sf->protocol, sf->host, sf->port, url, url_params, num_url_params, error);
         if (encoded_url == NULL) {
             goto cleanup;
         }
 
         // Execute request and set return value to result
         if (request_type == POST_REQUEST_TYPE) {
-            ret = curl_post_call(sf, curl, encoded_url, my_header, body, json);
+            ret = curl_post_call(sf, curl, encoded_url, my_header, body, json, error);
         } else if (request_type == GET_REQUEST_TYPE) {
-            ret = curl_get_call(sf, curl, encoded_url, my_header, json);
+            ret = curl_get_call(sf, curl, encoded_url, my_header, json, error);
         } else {
             // TODO add default case for bad type
         }

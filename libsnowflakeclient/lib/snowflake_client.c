@@ -271,7 +271,7 @@ SNOWFLAKE_STATUS STDCALL snowflake_connect(SNOWFLAKE *sf) {
     log_trace("Here is constructed body:\n%s", s_body);
 
     // Send request and get data
-    if (request(sf, &resp, SESSION_URL, url_params, 5, s_body, NULL, POST_REQUEST_TYPE)) {
+    if (request(sf, &resp, SESSION_URL, url_params, 5, s_body, NULL, POST_REQUEST_TYPE, &sf->error)) {
         s_resp = cJSON_Print(resp);
         log_trace("Here is JSON response:\n%s", s_resp);
         data = cJSON_GetObjectItem(resp, "data");
@@ -618,7 +618,7 @@ SNOWFLAKE_STATUS STDCALL snowflake_execute(SNOWFLAKE_STMT *sfstmt) {
     log_debug("Created body");
     log_trace("Here is constructed body:\n%s", s_body);
 
-    if (request(sfstmt->connection, &resp, QUERY_URL, url_params, 1, s_body, NULL, POST_REQUEST_TYPE)) {
+    if (request(sfstmt->connection, &resp, QUERY_URL, url_params, 1, s_body, NULL, POST_REQUEST_TYPE, &sfstmt->error)) {
         s_resp = cJSON_Print(resp);
         log_trace("Here is JSON response:\n%s", s_resp);
         data = cJSON_GetObjectItem(resp, "data");
