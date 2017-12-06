@@ -342,7 +342,7 @@ cleanup:
     return encoded_url;
 }
 
-sf_bool json_copy_string(char **dest, cJSON *data, const char *item) {
+sf_bool STDCALL json_copy_string(char **dest, cJSON *data, const char *item) {
     size_t blob_size;
     cJSON *blob = cJSON_GetObjectItem(data, item);
     if (cJSON_IsString(blob)) {
@@ -357,7 +357,7 @@ sf_bool json_copy_string(char **dest, cJSON *data, const char *item) {
     return SF_BOOLEAN_FALSE;
 }
 
-sf_bool json_copy_string_no_alloc(char dest[], cJSON *data, const char *item, size_t dest_size) {
+sf_bool STDCALL json_copy_string_no_alloc(char dest[], cJSON *data, const char *item, size_t dest_size) {
     size_t blob_size;
     cJSON *blob = cJSON_GetObjectItem(data, item);
     if (cJSON_IsString(blob)) {
@@ -373,7 +373,7 @@ sf_bool json_copy_string_no_alloc(char dest[], cJSON *data, const char *item, si
     return SF_BOOLEAN_FALSE;
 }
 
-sf_bool json_copy_bool(sf_bool *dest, cJSON *data, const char *item) {
+sf_bool STDCALL json_copy_bool(sf_bool *dest, cJSON *data, const char *item) {
     cJSON *blob = cJSON_GetObjectItem(data, item);
     if (cJSON_IsBool(blob)) {
         *dest = cJSON_IsTrue(blob) ? SF_BOOLEAN_TRUE : SF_BOOLEAN_FALSE;
@@ -384,7 +384,7 @@ sf_bool json_copy_bool(sf_bool *dest, cJSON *data, const char *item) {
     return SF_BOOLEAN_FALSE;
 }
 
-sf_bool json_copy_int(int64 *dest, cJSON *data, const char *item) {
+sf_bool STDCALL json_copy_int(int64 *dest, cJSON *data, const char *item) {
     cJSON *blob = cJSON_GetObjectItem(data, item);
     if (cJSON_IsNumber(blob)) {
         *dest = (int64) blob->valuedouble;
@@ -395,7 +395,7 @@ sf_bool json_copy_int(int64 *dest, cJSON *data, const char *item) {
     return SF_BOOLEAN_FALSE;
 }
 
-sf_bool json_detach_array_from_object(cJSON **dest, cJSON *data, const char *item) {
+sf_bool STDCALL json_detach_array_from_object(cJSON **dest, cJSON *data, const char *item) {
     cJSON *blob = cJSON_DetachItemFromObject(data, item);
     if (cJSON_IsArray(blob)) {
         if (*dest) {
@@ -409,7 +409,7 @@ sf_bool json_detach_array_from_object(cJSON **dest, cJSON *data, const char *ite
     return SF_BOOLEAN_FALSE;
 }
 
-sf_bool json_detach_array_from_array(cJSON **dest, cJSON *data, int index) {
+sf_bool STDCALL json_detach_array_from_array(cJSON **dest, cJSON *data, int index) {
     cJSON *blob = cJSON_DetachItemFromArray(data, index);
     if (blob && cJSON_IsArray(blob)) {
         if (*dest) {

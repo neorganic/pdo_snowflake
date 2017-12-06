@@ -33,5 +33,5 @@ void STDCALL clear_snowflake_error(SNOWFLAKE_ERROR *error) {
     error->msg = NULL;
     error->file = NULL;
     error->line = 0;
-    memset(error->sfqid, 0, UUID4_LEN);
+    memset(error->sfqid, '\0', UUID4_LEN);
 }
