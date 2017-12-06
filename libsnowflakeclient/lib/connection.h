@@ -37,6 +37,14 @@ typedef enum sf_request_type {
             DELETE_REQUEST_TYPE,
 } SNOWFLAKE_REQUEST_TYPE;
 
+typedef enum sf_json_errors {
+    SF_JSON_NO_ERROR,
+    SF_JSON_ERROR_ITEM_MISSING,
+    SF_JSON_ERROR_ITEM_WRONG_TYPE,
+    SF_JSON_ERROR_ITEM_NULL,
+    SF_JSON_ERROR_OOM
+} SNOWFLAKE_JSON_ERROR;
+
 typedef struct sf_raw_json_buffer {
     char *buffer;
     size_t size;
